@@ -2,17 +2,27 @@ cert-motd
 =========
 
 Looking to pull CERT coding standard into a machine parseable format, and then use that
-for message-of-the-day type stuff.
+for message-of-the-day type stuff.  I am assuming that the CERT standard cannot be distributed
+so instead a script is provided to do this.
 
 Dependencies
 ------------
 
-For the scraper:
+For the database generator:
 
- * Python3
- * BeautifulSoup 4
+* Python3
+* BeautifulSoup 4
 
 Usage
 -----
 
-The scraper runs by default on the CERT C website, and produces a JSON object of all the rules and recommendations.
+The db generator runs by default on the CERT C website, and produces a JSON list of all the rules and 
+recommendations.  The provided `install.sh` script will put the database in `/usr/share/fortune/cert_motd`, or you can
+run it manually, save the database where you like, and call the fortune script with the path to the
+database as you like.
+
+Future
+-----
+
+* I'd like to pull the first paragraph for each rule.  It will slow down database generation by an order of 
+  magnitude without multiprocessing though.

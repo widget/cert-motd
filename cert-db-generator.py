@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+#
+# Scraper of CERT website to produce a JSON-format C coding standard for individual use
 
 import argparse
 from bs4 import BeautifulSoup
@@ -8,7 +10,6 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 
 CERT_TOP_URL = "https://www.securecoding.cert.org/confluence/display/seccode/CERT+C+Coding+Standard"
-
 
 def parse_from_title(tp, title_node):
 	children = []
@@ -30,7 +31,7 @@ def parse_from_title(tp, title_node):
 try:
 	parser = argparse.ArgumentParser(description='Parse the CERT confluence page')
 	parser.add_argument('-i', '--input', help='Input URL, top page of CERT C coding standard', default=CERT_TOP_URL)
-	parser.add_argument('-o', '--output', help='JSON output', default='standard.txt')
+	parser.add_argument('-o', '--output', help='JSON output', default='cert_db.json')
 
 	args = parser.parse_args()
 
@@ -43,6 +44,7 @@ try:
 	print("Found %d sections" % len(index.parent.ul.find_all('a')))
 
 	sections = parse_from_title(top_parse, index)
+	allchildren = []
 
 	for s in sections:
 		
@@ -51,28 +53,34 @@ try:
 		secpage = BeautifulSoup(urllib.request.urlopen(s["url"]))
 		sectitles = secpage.find_all('h2')
 		
-		rules = []
-		rec = []
+		children = []
 		for t in sectitles:
 			try:
+				c2 = []
 				if '-Recommendations' in t.get('id'):
-					rec = parse_from_title(top_parse, t)
+					c2 = parse_from_title(top_parse, t)
+					for c in c2:
+						c["type"] = "rule"
 				elif '-Rules' in t.get('id'):
-					rules = parse_from_title(top_parse, t)
+					c2 = parse_from_title(top_parse, t)
+					for c in c2:
+						c["type"] = "recommendation"
+				
+				if len(c2) > 0:
+					children += c2
 			except TypeError:
 				pass
 		
-		print("Found %d rules, %d recommendations" % ( len(rec), len(rules)))
-		for r in rules:
-			print(r["name"])
-		for r in rec:
-			print(r["name"])
-		s["rules"] = rules
-		s["recs"] = rec 
+		for c in children:
+			c["section"] = s["name"]
+			c["sec-num"] = s["num"]
+		allchildren += children
+		
+		print("Found %d rules/recommendations" % ( len(children)))
 		
 	print("Saving output")
-	with open(args.output, 'w') as out:
-		json.dump(sections, out)
+	with open(args.output, 'w') as out: # and truncate
+		json.dump(allchildren, out)
 		
 except URLError as e:
 	print("Failed to access URL: %d - %s" % (e.code, e.reason))

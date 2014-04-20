@@ -80,7 +80,7 @@ try:
 		
 	print("Saving output")
 	with open(args.output, 'w') as out: # and truncate
-		json.dump(allchildren, out)
+		json.dump({"rules" : allchildren}, out)
 		
 except URLError as e:
 	print("Failed to access URL: %d - %s" % (e.code, e.reason))

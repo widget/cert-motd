@@ -21,7 +21,7 @@ except IOError as e:
 	print("Can't find CERT database at " % args.input)
 	sys.exit(1)
 
-select = random.choice(db)
+select = random.choice(db["rules"])
 
 if args.format == "json":
 	print(json.dumps(select, indent=4, separators=(',', ': ')))

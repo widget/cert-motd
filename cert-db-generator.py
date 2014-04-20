@@ -9,6 +9,8 @@ import urllib.request
 from urllib.error import URLError
 from urllib.parse import urlparse
 
+from multiprocessing.dummy import Pool as ThreadPool
+
 CERT_TOP_URL = "https://www.securecoding.cert.org/confluence/display/seccode/CERT+C+Coding+Standard"
 
 def parse_from_title(tp, title_node):
@@ -45,12 +47,20 @@ try:
 
 	sections = parse_from_title(top_parse, index)
 	allchildren = []
+	
+	# Awesome threading in a few lines.  Very happy.
+	pool = ThreadPool(4)
+	print("Downloading section pages")
+	secpages_data = pool.map(urllib.request.urlopen, [s["url"] for s in sections])
+	print("Parsing")
+	secpages = pool.map(BeautifulSoup, secpages_data)	
+	pool.close()
+	pool.join()
 
-	for s in sections:
+	for s,secpage in zip(sections, secpages):
 		
-		print("Found section '%s', following %s" % (s["name"], s["url"]))
+		print("Found section '%s', extracting from %s" % (s["name"], s["url"]))
 		
-		secpage = BeautifulSoup(urllib.request.urlopen(s["url"]))
 		sectitles = secpage.find_all('h2')
 		
 		children = []
@@ -80,6 +90,7 @@ try:
 		
 	print("Saving output")
 	with open(args.output, 'w') as out: # and truncate
+		# Saving out as a dictionary so .NET has a named member to find.  It sulks otherwise
 		json.dump({"rules" : allchildren}, out)
 		
 except URLError as e:

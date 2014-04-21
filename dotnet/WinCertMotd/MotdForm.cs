@@ -13,21 +13,25 @@ using System.Runtime.Serialization.Json;
 
 namespace WinCertMotd
 {
-    public partial class MainForm : Form
+    public partial class MotdForm : Form
     {
-        public MainForm()
+        public MotdForm()
         {
             InitializeComponent();
         }
 
-        private void DisplayHtml(string html)
+        private void DisplayMotd(string error)
         {
-            certText.Navigate("about:blank");
-            if (certText.Document != null)
-            {
-                certText.Document.Write(string.Empty);
-            }
-            certText.DocumentText = html;
+            linkLabelRule.Text = String.Empty;
+            labelTitle.Text = error;
+        }
+
+        private void DisplayMotd(string title, string message, string url)
+        {
+            labelTitle.Text = title;           
+            linkLabelRule.Text = message;
+
+            linkLabelRule.Links.Add(0, url.Length, url); 
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -55,26 +59,28 @@ namespace WinCertMotd
                         Random r = new Random();
                         Rule show = db.rules[r.Next(db.rules.Length)];
 
-                        DisplayHtml(String.Format("<html><h3>CERT {0} <abbr title={1}>{2}</abbr></h3><p><a target=_blank href={3}>{4}</a></p></html>",
-                                        show.Type, show.Section, show.Number, show.Url, show.Name));
-
+                        DisplayMotd(String.Format("CERT {0} {1} {2}", show.Type, show.Section, show.Number), show.Name, show.Url);
                     }
                     else
                     {
-                        DisplayHtml("Did not decode any rules");
+                        DisplayMotd("Did not decode any rules");
                     }
                 }
             }
             catch(FileNotFoundException err)
             {
-                DisplayHtml("Could not find database file <tt>" + path + "</tt>");
+                DisplayMotd("Could not find database file '" + path + "'");
             }
             catch (Exception err)
             {
-                DisplayHtml("Exception thrown: " + err.ToString());
+                DisplayMotd("Exception thrown: " + err.ToString());
             }
+        }
 
-
+        private void linkLabelRule_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            // Send the URL to the operating system.
+            System.Diagnostics.Process.Start(e.Link.LinkData as string);
         }
 
         private void quitButton_Click(object sender, EventArgs e)
